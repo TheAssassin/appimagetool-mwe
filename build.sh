@@ -5,28 +5,31 @@
 set -x
 set -e
 
-# use RAM disk if possible
-if [ "$BIONIC" == "" ] && [ "$COSMIC" == "" ] && [ -d /dev/shm ]; then
-    TEMP_BASE=/dev/shm
-else
-    TEMP_BASE=/tmp
-fi
-
-BUILD_DIR=$(mktemp -d -p "$TEMP_BASE" AppImageLauncher-build-XXXXXX)
-
-cleanup () {
-    if [ -d "$BUILD_DIR" ]; then
-        rm -rf "$BUILD_DIR"
+# build in different directory outside CI systems
+if [ "$CI" == "" ]; then
+    # use RAM disk if possible
+    if [ -d /dev/shm ]; then
+        TEMP_BASE=/dev/shm
+    else
+        TEMP_BASE=/tmp
     fi
-}
 
-trap cleanup EXIT
+    BUILD_DIR=$(mktemp -d -p "$TEMP_BASE" AppImageLauncher-build-XXXXXX)
 
-# store repo root as variable
-REPO_ROOT=$(readlink -f $(dirname $(dirname $0)))
-OLD_CWD=$(readlink -f .)
+    cleanup () {
+        if [ -d "$BUILD_DIR" ]; then
+            rm -rf "$BUILD_DIR"
+        fi
+    }
 
-pushd "$BUILD_DIR"
+    trap cleanup EXIT
+
+    # store repo root as variable
+    REPO_ROOT=$(readlink -f $(dirname $(dirname $0)))
+    OLD_CWD=$(readlink -f .)
+
+    pushd "$BUILD_DIR"
+fi
 
 mkdir AppDir
 touch AppDir/example.png
